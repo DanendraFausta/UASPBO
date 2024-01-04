@@ -2,6 +2,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton, QLabel, QLineEdit, QTableWidget, QFormLayout
 import pymysql
 
+# ...
+
 class MotorDealerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -14,12 +16,13 @@ class MotorDealerApp(QMainWindow):
     def init_ui(self):
         # Komponen UI
         self.table_widget = QTableWidget()
-        self.table_widget.setColumnCount(5)
-        self.table_widget.setHorizontalHeaderLabels(["ID", "Merek", "Harga", "Quantity", "I Type Barang"])
+        self.table_widget.setColumnCount(6)  # Menambah satu kolom untuk ID Produk
+        self.table_widget.setHorizontalHeaderLabels(["ID Produk", "Nama Produk", "Harga", "Quantity", "Type Barang"])
 
         self.refresh_button = QPushButton('Refresh Data')
         self.refresh_button.clicked.connect(self.refresh_data)
 
+        self.idproduk_input = QLineEdit()
         self.produk_input = QLineEdit()
         self.harga_input = QLineEdit()
         self.quantity_input = QLineEdit()
@@ -32,9 +35,11 @@ class MotorDealerApp(QMainWindow):
         layout = QVBoxLayout()
 
         form_layout = QFormLayout()
+        form_layout.addRow('ID Produk:', self.idproduk_input)  # Baris ini menambahkan input ID Produk
         form_layout.addRow('Nama Produk:', self.produk_input)
         form_layout.addRow('Harga:', self.harga_input)
         form_layout.addRow('QTY:', self.quantity_input)
+        form_layout.addRow('Type:', self.type_input)
 
         layout.addWidget(QLabel('Input Data Motor:'))
         layout.addLayout(form_layout)
@@ -54,17 +59,6 @@ class MotorDealerApp(QMainWindow):
             database='dealer_motor'
         )
 
-        # Membuat tabel jika belum ada
-        with self.conn.cursor() as cursor:
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS motor (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    merek VARCHAR(255),
-                    harga INT
-                )
-            ''')
-            self.conn.commit()
-
         # Refresh data saat aplikasi dimulai
         self.refresh_data()
 
@@ -83,19 +77,24 @@ class MotorDealerApp(QMainWindow):
 
     def add_data(self):
         # Mendapatkan nilai dari input
-        merek = self.merek_input.text()
+        id_produk = self.idproduk_input.text()
+        nama_produk = self.produk_input.text()
         harga = self.harga_input.text()
         quantity = self.quantity_input.text()
-        type_barang = self.id_jenis_produk.text()
+        type_barang = self.type_input.text()
 
-        
+        # Menambahkan data baru ke dalam database
         with self.conn.cursor() as cursor:
-            cursor.execute('INSERT INTO produk (id_produk, nama_produk, harga, quantity, id_jenis_produk) VALUES (%s, %s)', (merek, harga, ))
+            cursor.execute('INSERT INTO produk (id_produk, nama_produk, harga, quantity, id_jenis_produk) VALUES (%s, %s, %s, %s, %s)',
+                           (id_produk, nama_produk, harga, quantity, type_barang))
             self.conn.commit()
 
         # Membersihkan input setelah menambahkan data
+        self.idproduk_input.clear()
         self.produk_input.clear()
         self.harga_input.clear()
+        self.quantity_input.clear()
+        self.type_input.clear()
 
         # Refresh data setelah menambahkan
         self.refresh_data()
